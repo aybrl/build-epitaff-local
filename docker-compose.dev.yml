@@ -1,0 +1,61 @@
+version: '3.8'
+
+services:
+  epitaff-auth:
+    image: mabepisen/auth-back:int
+    ports:
+      - "3030:3030"
+    environment:
+      DATABASE_HOST: db
+      DATABASE_PORT: 5432
+      DATABASE_NAME: epitaff
+      DATABASE_USER: postgres
+      DATABASE_PASSWORD: toto
+      EDT_ADDRESS: edt.esipe-creteil.info
+      EDT_PORT: 9090
+    depends_on:
+      - db
+    restart: on-failure
+  epitaff-requestor:
+    image: mabepisen/epitaff-requestor-api:int
+    ports:
+      - "9999:9999"
+    environment:
+      DATABASE_HOST: db
+      DATABASE_PORT: 5432
+      DATABASE_NAME: edt_epitaff
+      DATABASE_USER: postgres
+      DATABASE_PASSWORD: toto
+    depends_on:
+      - db
+    restart: on-failure
+
+  epitaff-app:
+    image: mabepisen/epitaff-app:int
+    ports:
+      - "3000:3000"
+    build:
+      args:
+        EDT_ADDRESS: localhost
+        EDT_PORT: 9091
+        AUTH_ADDRESS: localhost
+        AUTH_PORT: 3030
+        REQUESTOR_ADDRESS: localhost
+        REQUESTOR_PORT: 9999
+
+    depends_on:
+      - epitaff-auth
+    restart: on-failure
+
+  db:
+    image: postgres:16
+    container_name: edt-epitaff-db
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: toto
+    volumes:
+      - ./backup:/home
+    restart: always
+
